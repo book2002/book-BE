@@ -38,7 +38,7 @@ public class MemberService {
                 .memberId(savedMember.getId())
                 .role(savedMember.getRole())
                 .status(savedMember.getStatus())
-                .createdAt(savedMember.getCreated_at())
+                .createdAt(savedMember.getCreatedAt())
                 .build();
     }
 
