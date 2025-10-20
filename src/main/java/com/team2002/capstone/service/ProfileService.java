@@ -58,7 +58,7 @@ public class ProfileService {
                 .bio(profile.getBio())
                 .followerCount(profile.getFollowers().size())
                 .followingCount(profile.getFollowings().size())
-                .createdAt(profile.getCreated_at())
+                .createdAt(profile.getCreatedAt())
                 .build();
     }
 
