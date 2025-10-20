@@ -1,5 +1,6 @@
 package com.team2002.capstone.domain;
 
+import com.team2002.capstone.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,7 +9,7 @@ import lombok.*;
 @Setter
 @Builder
 @AllArgsConstructor
-public class Discussion {
+public class Discussion extends BaseEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -23,6 +24,7 @@ public class Discussion {
     private String topicTitle;
     private String topicContent;
 
+    @Column(columnDefinition = "boolean default false")
     private boolean isClosed;
 
     public Discussion() {

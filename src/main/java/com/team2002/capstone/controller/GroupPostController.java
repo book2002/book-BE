@@ -72,14 +72,14 @@ public class GroupPostController {
     }
 
     @Operation(summary = "댓글 수정")
-    @PutMapping("/comments/{commentId}")
+    @PutMapping("/posts/comments/{commentId}")
     public ResponseEntity<GroupCommentResponseDTO> updateComment(@PathVariable Long commentId, @RequestBody @Validated GroupCommentRequestDTO commentRequestDTO) {
         GroupCommentResponseDTO groupCommentResponseDTO = groupPostService.updateComment(commentId, commentRequestDTO);
         return ResponseEntity.status(HttpStatus.OK).body(groupCommentResponseDTO);
     }
 
-    @Operation(summary = "댓글 수정")
-    @DeleteMapping("/comments/{commentId}")
+    @Operation(summary = "댓글 삭제")
+    @DeleteMapping("/posts/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
         groupPostService.deleteComment(commentId);
         return ResponseEntity.status(HttpStatus.OK).build();

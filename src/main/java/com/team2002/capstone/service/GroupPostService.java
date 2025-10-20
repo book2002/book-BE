@@ -26,7 +26,6 @@ public class GroupPostService {
     private final MemberRepository memberRepository;
     private final ProfileRepository profileRepository;
     private final ReadingGroupRepository readingGroupRepository;
-    private final GroupMemberRepository groupMemberRepository;
     private final GroupService groupService;
 
     @Transactional
@@ -101,6 +100,9 @@ public class GroupPostService {
         GroupPost post = groupPostRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
         validatePostPermission(author, post);
+
+        post.setTitle(requestDTO.getTitle());
+        post.setContent(requestDTO.getContent());
 
         long commentCount = groupCommentRepository.countByPost(post);
         return GroupPostResponseDTO.builder()
