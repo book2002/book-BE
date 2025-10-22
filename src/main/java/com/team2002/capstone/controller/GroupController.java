@@ -32,17 +32,24 @@ public class GroupController {
         return ResponseEntity.status(HttpStatus.CREATED).body(groupResponseDTO);
     }
 
-    @Operation(summary = "독서 모임 탈퇴")
-    @DeleteMapping("/{groupId}/leave")
-    public ResponseEntity<Void> leaveGroup(@PathVariable Long groupId) {
-        groupService.leaveGroup(groupId);
-        return ResponseEntity.ok().build();
-    }
-
     @Operation(summary = "나의 모임 목록 조회")
     @GetMapping("/my")
     public ResponseEntity<List<GroupResponseDTO>> getMyGroups() {
         List<GroupResponseDTO> groupResponseDTOList = groupService.getMyGroups();
         return ResponseEntity.status(HttpStatus.OK).body(groupResponseDTOList);
+    }
+
+    @Operation(summary = "독서 모임 목록 조회")
+    @GetMapping
+    public ResponseEntity<List<GroupResponseDTO>> getGroups() {
+        List<GroupResponseDTO> groupResponseDTOList = groupService.getGroups();
+        return ResponseEntity.status(HttpStatus.OK).body(groupResponseDTOList);
+    }
+
+    @Operation(summary = "독서 모임 탈퇴")
+    @DeleteMapping("/{groupId}/leave")
+    public ResponseEntity<Void> leaveGroup(@PathVariable Long groupId) {
+        groupService.leaveGroup(groupId);
+        return ResponseEntity.ok().build();
     }
 }

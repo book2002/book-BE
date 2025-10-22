@@ -130,6 +130,26 @@ public class GroupService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public List<GroupResponseDTO> getGroups() {
+        List<ReadingGroup> groups = readingGroupRepository.findAll();
+
+        return groups.stream()
+                .map(group -> {
+                    int currentCount = groupMemberRepository.countByGroup(group);
+                    return GroupResponseDTO.builder()
+                            .groupId(group.getId())
+                            .name(group.getName())
+                            .description(group.getDescription())
+                            .goal(group.getGoal())
+                            .ownerName(group.getOwner().getNickname())
+                            .maxMembers(currentCount)
+                            .currentMembers(currentCount)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
     public boolean isMemberOfGroup(Long groupId, Profile profile) {
         ReadingGroup group = readingGroupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("모임을 찾을 수 없습니다."));
