@@ -1,14 +1,13 @@
 package com.team2002.capstone.controller;
 
 import com.team2002.capstone.domain.BookShelfItem;
-import com.team2002.capstone.dto.BookDto;
-import com.team2002.capstone.dto.ProgressUpdateRequestDto;
+import com.team2002.capstone.dto.*;
 import com.team2002.capstone.service.BookService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import com.team2002.capstone.dto.BookShelfItemDto;
 
 @RestController
 @RequestMapping("/api/v1/my-shelf")
@@ -20,16 +19,17 @@ public class BookShelfController {
         this.bookService = bookService;
     }
 
-    @PostMapping("/items") // 내 책장에 책 저장
-    public ResponseEntity<?> saveItemToMyShelf(@RequestBody BookDto bookDto) {
+    @PostMapping("/items")
+    public ResponseEntity<?> saveItemToMyShelf(@Valid @RequestBody BookSaveRequestDto requestDto) {
         try {
-            BookShelfItem savedItem = bookService.saveBookToMyShelf(bookDto);
-            return ResponseEntity.ok(savedItem);
+            // Service 메소드가 DTO를 반환하도록 수정했다고 가정
+            BookShelfItemDto savedItemDto = bookService.saveBookToMyShelf(requestDto);
+            return ResponseEntity.ok(savedItemDto);
         } catch (IllegalStateException e) {
-            // 중복 저장 시 409 Conflict 에러 반환
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
+
 
     @GetMapping("/items") // 내 책장에 책 조회
     public ResponseEntity<List<BookShelfItemDto>> getMyShelfItems() {
@@ -44,11 +44,23 @@ public class BookShelfController {
     }
 
     @PatchMapping("/items/{itemId}/progress") // 독서 진행률
-    public ResponseEntity<BookShelfItem> updateBookProgress(
+    public ResponseEntity<BookShelfItemDto> updateBookProgress(
             @PathVariable Long itemId,
-            @RequestBody ProgressUpdateRequestDto dto) {
-        BookShelfItem updatedItem = bookService.updateBookProgress(itemId, dto);
-        return ResponseEntity.ok(updatedItem);
+            @Valid @RequestBody ProgressUpdateRequestDto dto) {
+        BookShelfItemDto updatedItemDto = bookService.updateBookProgress(itemId, dto);
+        return ResponseEntity.ok(updatedItemDto);
     }
+
+    @PatchMapping("/items/{itemId}/state")
+    public ResponseEntity<BookShelfItemDto> updateItemState( // 반환 타입을 DTO로 변경
+                                                             @PathVariable Long itemId,
+                                                             @Valid @RequestBody BookStateUpdateRequestDto dto) {
+        // 올바른 Service 메소드 호출
+        BookShelfItemDto updatedItemDto = bookService.updateBookState(itemId, dto);
+        return ResponseEntity.ok(updatedItemDto);
+    }
+
+
+
 
 }

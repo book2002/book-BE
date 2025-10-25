@@ -15,6 +15,8 @@ public class BookShelfItemDto {
     private String thumbnail;
     private BookShelfItem.ReadState state;
     private LocalDateTime createdAt;
+    private Integer currentPage;
+    private Integer totalPage;
 
     // Entity를 DTO로 변환하는 생성자
     public BookShelfItemDto(BookShelfItem item) {
@@ -25,5 +27,7 @@ public class BookShelfItemDto {
         this.thumbnail = item.getThumbnail();
         this.state = item.getState();
         this.createdAt = item.getCreatedAt();
+        this.currentPage = item.getCurrentPage();
+        this.totalPage = item.getTotalPage();
     }
 }

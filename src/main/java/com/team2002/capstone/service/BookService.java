@@ -97,19 +97,30 @@ public class BookService {
 
     //BookShelf
     @Transactional
-    public BookShelfItem saveBookToMyShelf(BookDto bookDto) {
+    // 반환 타입을 DTO로 변경
+    public BookShelfItemDto saveBookToMyShelf(BookSaveRequestDto requestDto) {
         BookShelf defaultShelf = bookShelfRepository.findById(1L)
                 .orElseGet(() -> bookShelfRepository.save(new BookShelf("내 책장")));
 
-        // 수정된 Repository 메소드를 사용하여 중복 확인
-        bookShelfItemRepository.findByIsbnAndBookShelf(bookDto.getIsbn(), defaultShelf)
+        bookShelfItemRepository.findByIsbnAndBookShelf(requestDto.getIsbn(), defaultShelf)
                 .ifPresent(item -> {
                     throw new IllegalStateException("이미 책장에 추가된 책입니다.");
                 });
 
-        // ID가 아닌, defaultShelf 객체 자체를 생성자에 전달
-        BookShelfItem newItem = new BookShelfItem(bookDto, defaultShelf);
-        return bookShelfItemRepository.save(newItem);
+        // ▼▼▼ 올바른 생성자 호출 (8개 인자) ▼▼▼
+        BookShelfItem newItem = new BookShelfItem(
+                requestDto.getIsbn(),
+                requestDto.getTitle(),
+                (requestDto.getAuthors() != null) ? String.join(", ", requestDto.getAuthors()) : null, // authors 처리 (null 가능하게)
+                requestDto.getThumbnail(),
+                defaultShelf,
+                requestDto.getState(),
+                requestDto.getCurrentPage(),
+                requestDto.getTotalPage()
+        );
+        BookShelfItem savedItem = bookShelfItemRepository.save(newItem);
+        // Entity -> Response DTO로 변환하여 반환
+        return new BookShelfItemDto(savedItem);
     }
 
     public List<BookShelfItemDto> getMyShelfItems() {
@@ -186,12 +197,23 @@ public class BookService {
 
     // BookProgress
     @Transactional
-    public BookShelfItem updateBookProgress(Long itemId, ProgressUpdateRequestDto dto) {
+    // 반환 타입을 DTO로 변경
+    public BookShelfItemDto updateBookProgress(Long itemId, ProgressUpdateRequestDto dto) {
         BookShelfItem item = bookShelfItemRepository.findById(itemId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다. itemId=" + itemId));
+        item.updateProgress(dto.getCurrentPage());
+        // Entity -> Response DTO로 변환하여 반환
+        return new BookShelfItemDto(item);
+    }
 
-        item.updateProgress(dto.getCurrentPage(), dto.getTotalPage());
-        return item;
+    public BookShelfItemDto updateBookState(Long itemId, BookStateUpdateRequestDto dto) {
+        BookShelfItem item = bookShelfItemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다. itemId=" + itemId));
+        // Entity 내부 메소드 호출 (public으로 변경했다고 가정)
+        item.updateStateAndPages(dto.getNewState(), dto.getCurrentPage(), dto.getTotalPage());
+        // Entity -> Response DTO로 변환하여 반환
+        BookShelfItem updatedItem = bookShelfItemRepository.save(item);
+        return new BookShelfItemDto(item);
     }
 
 }
