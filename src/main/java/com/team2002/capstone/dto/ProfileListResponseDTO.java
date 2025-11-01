@@ -11,6 +11,7 @@ public class ProfileListResponseDTO {
     private Long profileId;
     private String nickname;
     private String bio;
+    private String profileImageUrl;
 
     private boolean isFollowing; // 내가 팔로우 했는지 여부
 }

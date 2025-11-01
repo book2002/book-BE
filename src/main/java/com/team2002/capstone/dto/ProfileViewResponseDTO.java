@@ -11,6 +11,7 @@ public class ProfileViewResponseDTO {
 
     private String nickname;
     private String bio;
+    private String profileImageUrl;
 
     private int followerCount;
     private int followingCount;

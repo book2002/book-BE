@@ -6,10 +6,13 @@ import com.team2002.capstone.service.GroupService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -19,9 +22,12 @@ public class GroupController {
     private final GroupService groupService;
 
     @Operation(summary = "독서 모임 생성")
-    @PostMapping
-    public ResponseEntity<GroupResponseDTO> createGroup(@RequestBody @Validated GroupCreateRequestDTO groupCreateRequestDTO) {
-        GroupResponseDTO groupResponseDTO = groupService.createGroup(groupCreateRequestDTO);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<GroupResponseDTO> createGroup(
+            @Validated @RequestPart (value = "request") GroupCreateRequestDTO groupCreateRequestDTO,
+            @RequestPart(value = "image", required = false) MultipartFile image)
+    throws IOException {
+        GroupResponseDTO groupResponseDTO = groupService.createGroup(groupCreateRequestDTO, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(groupResponseDTO);
     }
 

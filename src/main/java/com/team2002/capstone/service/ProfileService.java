@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,9 +29,10 @@ public class ProfileService {
     private final ProfileRepository profileRepository;
     private final MemberRepository memberRepository;
     private final FollowRepository followRepository;
+    private final FileService fileService;
 
     @Transactional
-    public ProfileResponseDTO createProfile(ProfileRequestDTO requestDTO) {
+    public ProfileResponseDTO createProfile(ProfileRequestDTO requestDTO, MultipartFile image) throws IOException {
         // 현재 로그인된 사용자 정보
         String userEmail = SecurityUtil.getCurrentUsername();
         Member member = memberRepository.findByEmail(userEmail)
@@ -39,6 +42,12 @@ public class ProfileService {
             throw new IllegalStateException("이미 프로필을 생성했습니다.");
         }
 
+        String profileImageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            // 파일을 'profiles' 폴더에 업로드하고 URL 획득
+            profileImageUrl = fileService.uploadFile(image, "profiles");
+        }
+
         GenderEnum gender = requestDTO.getGender().equals("MALE") ? GenderEnum.MALE : GenderEnum.FEMALE;
 
         Profile profile = Profile.builder()
@@ -46,6 +55,7 @@ public class ProfileService {
                 .birth(requestDTO.getBirth())
                 .gender(gender)
                 .bio(requestDTO.getBio())
+                .profileImageUrl(profileImageUrl)
                 .member(member)
                 .followings(new HashSet<>())
                 .followers(new HashSet<>())
@@ -56,6 +66,7 @@ public class ProfileService {
                 .profileId(profile.getId())
                 .nickName(profile.getNickname())
                 .bio(profile.getBio())
+                .profileImageUrl(profile.getProfileImageUrl())
                 .followerCount(profile.getFollowers().size())
                 .followingCount(profile.getFollowings().size())
                 .createdAt(profile.getCreatedAt())
@@ -63,8 +74,23 @@ public class ProfileService {
     }
 
     @Transactional
-    public void updateProfile(ProfileUpdateRequestDTO requestDTO) {
+    public ProfileResponseDTO updateProfile(ProfileUpdateRequestDTO requestDTO, MultipartFile image) throws IOException {
         Profile profile = getCurrentProfile();
+        String oldImageUrl = profile.getProfileImageUrl();
+        String newImageUrl = oldImageUrl;
+
+        if(requestDTO.isDeleteProfileImage()){
+            if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                fileService.deleteFile(oldImageUrl);
+            }
+            newImageUrl = null;
+        }
+        else if (image != null && !image.isEmpty()) {
+            newImageUrl = fileService.uploadFile(image, "profiles");
+            if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                fileService.deleteFile(oldImageUrl);
+            }
+        }
 
         if(requestDTO.getNickname() != null && !requestDTO.getNickname().isBlank()) {
             profile.setNickname(requestDTO.getNickname());
@@ -72,6 +98,17 @@ public class ProfileService {
         if(requestDTO.getBio() != null && !requestDTO.getBio().isBlank()) {
             profile.setBio(requestDTO.getBio());
         }
+
+        profile.setProfileImageUrl(newImageUrl);
+        return ProfileResponseDTO.builder()
+                .profileId(profile.getId())
+                .nickName(profile.getNickname())
+                .bio(profile.getBio())
+                .profileImageUrl(profile.getProfileImageUrl())
+                .followerCount(profile.getFollowers().size())
+                .followingCount(profile.getFollowings().size())
+                .createdAt(profile.getCreatedAt())
+                .build();
     }
 
     @Transactional
@@ -97,6 +134,7 @@ public class ProfileService {
         return ProfileViewResponseDTO.builder()
                 .nickname(viewProfile.getNickname())
                 .bio(viewProfile.getBio())
+                .profileImageUrl(viewProfile.getProfileImageUrl())
                 .followerCount(followerCount)
                 .followingCount(followingCount)
                 .isMyProfile(isMyProfile)
@@ -118,6 +156,7 @@ public class ProfileService {
                             .profileId(followingProfile.getId())
                             .nickname(followingProfile.getNickname())
                             .bio(followingProfile.getBio())
+                            .profileImageUrl(followingProfile.getProfileImageUrl())
                             .isFollowing(true) // 팔로잉 목록이므로 항상 true
                             .build();
                 })
@@ -138,6 +177,7 @@ public class ProfileService {
                             .profileId(followerProfile.getId())
                             .nickname(followerProfile.getNickname())
                             .bio(followerProfile.getBio())
+                            .profileImageUrl(followerProfile.getProfileImageUrl())
                             .isFollowing(isFollowing)
                             .build();
                 })

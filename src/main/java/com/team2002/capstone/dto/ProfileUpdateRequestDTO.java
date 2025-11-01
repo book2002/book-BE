@@ -13,4 +13,5 @@ public class ProfileUpdateRequestDTO {
     private String nickname;
     @Size(max = 200, message = "소개는 200자 이하여야 합니다.")
     private String bio;
+    private boolean deleteProfileImage;
 }

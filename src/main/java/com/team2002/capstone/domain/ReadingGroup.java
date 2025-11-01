@@ -26,6 +26,8 @@ public class ReadingGroup extends BaseEntity {
 
     private int maxMembers;
 
+    private String groupImageUrl;
+
     public ReadingGroup() {
     }
 }
