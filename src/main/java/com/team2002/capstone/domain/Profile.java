@@ -1,11 +1,14 @@
 package com.team2002.capstone.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.team2002.capstone.domain.common.BaseEntity;
 import com.team2002.capstone.domain.enums.GenderEnum;
 import jakarta.persistence.*;
-import lombok.*;
+        import lombok.*;
 
+        import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -38,6 +41,10 @@ public class Profile extends BaseEntity {
 
     @OneToMany(mappedBy = "following", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Follow> followers = new HashSet<>(); // 나를 팔로우 하는 사람들
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("profile-loans")
+    private List<BookLoan> bookLoans = new ArrayList<>();
 
     public Profile() {
     }
