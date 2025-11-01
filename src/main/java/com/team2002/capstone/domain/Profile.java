@@ -32,6 +32,8 @@ public class Profile extends BaseEntity {
 
     private String birth;
 
+    private String profileImageUrl;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;

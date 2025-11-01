@@ -15,7 +15,9 @@ import com.team2002.capstone.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,10 +30,16 @@ public class GroupService {
     private final GroupMemberRepository groupMemberRepository;
     private final MemberRepository memberRepository;
     private final ProfileRepository profileRepository;
+    private final FileService fileService;
 
     @Transactional
-    public GroupResponseDTO createGroup(GroupCreateRequestDTO requestDTO) {
+    public GroupResponseDTO createGroup(GroupCreateRequestDTO requestDTO, MultipartFile image) throws IOException {
         Profile owner = getCurrentProfile();
+        String imageUrl = null;
+
+        if (image != null && !image.isEmpty()) {
+            imageUrl = fileService.uploadFile(image, "groups");
+        }
 
         ReadingGroup readingGroup = ReadingGroup.builder()
                 .name(requestDTO.getName())
@@ -39,6 +47,7 @@ public class GroupService {
                 .goal(requestDTO.getGoal())
                 .maxMembers(requestDTO.getMaxMembers())
                 .owner(owner)
+                .groupImageUrl(imageUrl)
                 .build();
         readingGroupRepository.save(readingGroup);
 
@@ -56,6 +65,8 @@ public class GroupService {
                 .ownerName(owner.getNickname())
                 .maxMembers(readingGroup.getMaxMembers())
                 .currentMembers(1)
+                .groupImageUrl(imageUrl)
+                .isJoined(true) // 모임 생성자 = 모임 구성원
                 .build();
     }
 
@@ -89,6 +100,8 @@ public class GroupService {
                 .ownerName(readingGroup.getOwner().getNickname())
                 .maxMembers(readingGroup.getMaxMembers())
                 .currentMembers(newCount)
+                .isJoined(true)
+                .groupImageUrl(readingGroup.getGroupImageUrl())
                 .build();
     }
 
@@ -125,6 +138,8 @@ public class GroupService {
                             .ownerName(group.getOwner().getNickname())
                             .maxMembers(currentCount)
                             .currentMembers(currentCount)
+                            .isJoined(true)
+                            .groupImageUrl(group.getGroupImageUrl())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -148,6 +163,7 @@ public class GroupService {
                             .maxMembers(group.getMaxMembers())
                             .currentMembers(currentCount)
                             .isJoined(isJoined)
+                            .groupImageUrl(group.getGroupImageUrl())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -171,6 +187,7 @@ public class GroupService {
                             .maxMembers(group.getMaxMembers())
                             .currentMembers(currentCount)
                             .isJoined(isJoined)
+                            .groupImageUrl(group.getGroupImageUrl())
                             .build();
                 })
                 .filter(dto -> dto.getCurrentMembers() < dto.getMaxMembers())

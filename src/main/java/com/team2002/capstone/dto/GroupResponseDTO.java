@@ -13,5 +13,6 @@ public class GroupResponseDTO {
     private String ownerName;
     private int maxMembers;
     private int currentMembers;
+    private String groupImageUrl;
     private boolean isJoined;
 }
