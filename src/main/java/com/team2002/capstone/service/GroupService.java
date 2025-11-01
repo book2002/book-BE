@@ -133,20 +133,49 @@ public class GroupService {
     @Transactional
     public List<GroupResponseDTO> getGroups() {
         List<ReadingGroup> groups = readingGroupRepository.findAll();
+        Profile profile = getCurrentProfile();
 
         return groups.stream()
                 .map(group -> {
                     int currentCount = groupMemberRepository.countByGroup(group);
+                    boolean isJoined = groupMemberRepository.findByProfileAndGroup(profile, group).isPresent();
                     return GroupResponseDTO.builder()
                             .groupId(group.getId())
                             .name(group.getName())
                             .description(group.getDescription())
                             .goal(group.getGoal())
                             .ownerName(group.getOwner().getNickname())
-                            .maxMembers(currentCount)
+                            .maxMembers(group.getMaxMembers())
                             .currentMembers(currentCount)
+                            .isJoined(isJoined)
                             .build();
                 })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<GroupResponseDTO> getPopularGroups() {
+        List<ReadingGroup> groups = readingGroupRepository.findAll();
+        Profile profile = getCurrentProfile();
+
+        return groups.stream()
+                .map(group -> {
+                    int currentCount = groupMemberRepository.countByGroup(group);
+                    boolean isJoined = groupMemberRepository.findByProfileAndGroup(profile, group).isPresent();
+                    return GroupResponseDTO.builder()
+                            .groupId(group.getId())
+                            .name(group.getName())
+                            .description(group.getDescription())
+                            .goal(group.getGoal())
+                            .ownerName(group.getOwner().getNickname())
+                            .maxMembers(group.getMaxMembers())
+                            .currentMembers(currentCount)
+                            .isJoined(isJoined)
+                            .build();
+                })
+                .filter(dto -> dto.getCurrentMembers() < dto.getMaxMembers())
+                .sorted((dto1, dto2) -> Integer.compare(dto2.getCurrentMembers(), dto1.getCurrentMembers()))
+                // 정원이 다 찬 모임 제외, 현원이 많은 순으로 정렬
                 .collect(Collectors.toList());
     }
 
