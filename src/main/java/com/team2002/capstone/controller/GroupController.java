@@ -46,6 +46,13 @@ public class GroupController {
         return ResponseEntity.status(HttpStatus.OK).body(groupResponseDTOList);
     }
 
+    @Operation(summary = "독서 모임 목록 조회 (인기순)")
+    @GetMapping("/popular")
+    public ResponseEntity<List<GroupResponseDTO>> getPopularGroups() {
+        List<GroupResponseDTO> groupResponseDTOList = groupService.getPopularGroups();
+        return ResponseEntity.status(HttpStatus.OK).body(groupResponseDTOList);
+    }
+
     @Operation(summary = "독서 모임 탈퇴")
     @DeleteMapping("/{groupId}/leave")
     public ResponseEntity<Void> leaveGroup(@PathVariable Long groupId) {
