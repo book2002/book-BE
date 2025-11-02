@@ -98,6 +98,11 @@ public class MemberService {
     }
 
     @Transactional
+    public void suspendedMember(Member member) {
+        member.setStatus(AccountStatusEnum.SUSPENDED);
+    }
+
+    @Transactional
     public void deleteMember() {
         String userEmail = SecurityUtil.getCurrentUsername();
         Member member = memberRepository.findByEmail(userEmail)

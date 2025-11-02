@@ -17,7 +17,7 @@ public class FcmService {
     private MemberRepository memberRepository;
 
     /*
-    * 독서 습관 설정 기능에 사용
+    * 독서 습관 설정 기능, 신고 처리 기능에 사용
     */
     public void sendNotification(String target, String title, String body) {
 
