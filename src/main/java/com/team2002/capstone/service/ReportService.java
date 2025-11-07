@@ -113,6 +113,23 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
+    public ReportDetailDTO getReport(Long id) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Report not found"));
+
+        return ReportDetailDTO.builder()
+                .id(report.getId())
+                .title(report.getTitle())
+                .content(report.getContent())
+                .status(report.getStatus())
+                .statusDescription(report.getStatus().getDescription())
+                .reporterNickname(report.getReporter().getNickname())
+                .reportedNickname(report.getReportedProfile().getNickname())
+                .adminResponse(report.getAdminResponse())
+                .createdAt(report.getCreatedAt())
+                .build();
+    }
+
     @Transactional
     public ReportDetailDTO updateReportStatus(Long reportId, ReportUpdateDTO requestDTO) {
         Report report = reportRepository.findById(reportId)
