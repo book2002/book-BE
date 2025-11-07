@@ -114,13 +114,13 @@ public class ReportService {
     }
 
     @Transactional
-    public ReportDetailDTO updateReport(Long reportId, ReportUpdateDTO requestDTO) {
+    public ReportDetailDTO updateReportStatus(Long reportId, ReportUpdateDTO requestDTO) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report not found"));
         report.updateStatusAndResponse(requestDTO.getStatus(), requestDTO.getAdminResponse());
 
         if (requestDTO.getStatus() == ReportStatus.COMPLETED) {
-            Member reportedMember = getCurrentProfile().getMember();
+            Member reportedMember = report.getReportedProfile().getMember();
             switch (requestDTO.getActionType()) {
                 case SUSPEND:
                     memberService.suspendedMember(reportedMember);
