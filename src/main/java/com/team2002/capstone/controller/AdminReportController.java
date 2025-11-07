@@ -34,7 +34,7 @@ public class AdminReportController {
             @PathVariable Long reportId,
             @Validated @RequestBody ReportUpdateDTO updateDTO
     ) {
-        ReportDetailDTO reportDetailDTO = reportService.updateReport(reportId, updateDTO);
+        ReportDetailDTO reportDetailDTO = reportService.updateReportStatus(reportId, updateDTO);
         return ResponseEntity.status(HttpStatus.OK).body(reportDetailDTO);
     }
 }
