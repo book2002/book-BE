@@ -15,7 +15,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -97,9 +99,36 @@ public class MemberService {
         member.setStatus(AccountStatusEnum.INACTIVE);
     }
 
+     /*
+     *  관리자용
+     */
+    public List<AdminMemberResponseDTO> getAllMembers() {
+        List<Member> members = memberRepository.findAll();
+        return members.stream()
+                .map(member -> {
+                    Profile profile = member.getProfile();
+                    return AdminMemberResponseDTO.from(member, profile);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public AdminMemberResponseDTO getMemberDetail(Long id) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("회원을 찾을 수 없습니다."));
+        Profile profile = member.getProfile();
+        return AdminMemberResponseDTO.from(member, profile);
+    }
+
     @Transactional
     public void suspendedMember(Member member) {
         member.setStatus(AccountStatusEnum.SUSPENDED);
+    }
+
+    @Transactional
+    public void activeMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("회원을 찾을 수 없습니다."));
+        member.setStatus(AccountStatusEnum.ACTIVE);
     }
 
     @Transactional
