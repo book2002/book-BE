@@ -28,6 +28,13 @@ public class AdminReportController {
         return ResponseEntity.status(HttpStatus.OK).body(reports);
     }
 
+    @Operation(summary = "관리자: 신고 상세 조회")
+    @GetMapping("/{reportId}")
+    public ResponseEntity<ReportDetailDTO> getReportDetail(@PathVariable Long reportId) {
+        ReportDetailDTO reportResponseDTO = reportService.getReport(reportId);
+        return ResponseEntity.status(HttpStatus.OK).body(reportResponseDTO);
+    }
+
     @Operation(summary = "관리자: 신고 처리 및 답변 등록")
     @PatchMapping("/{reportId}")
     public ResponseEntity<ReportDetailDTO> updateReportStatus(
