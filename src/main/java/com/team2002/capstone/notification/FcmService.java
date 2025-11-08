@@ -41,7 +41,7 @@ public class FcmService {
     }
 
     /*
-    * 해빗 트래커 기능에 사용
+    * 해빗 트래커 기능, 전체 알림 발송에 사용
     */
     public void sendMulticastNotification(List<String> targetTokens, String title, String body) {
         if (targetTokens.isEmpty()) return;
