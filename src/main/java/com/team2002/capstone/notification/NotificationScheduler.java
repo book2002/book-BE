@@ -44,7 +44,8 @@ public class NotificationScheduler {
         List<ReadingHabit> habits = readingHabitRepository.findActiveHabitsByTimeAndDay(currentTime, currentDay);
 
         for (ReadingHabit habit : habits) {
-            if (habit.getLastNotifiedDate() != null && today.isAfter(habit.getLastNotifiedDate())) {
+            if (habit.getLastNotifiedDate() != null && today.isEqual(habit.getLastNotifiedDate())) {
+                log.info("사용자 ID {} - 오늘 이미 알림이 발송되었습니다.", habit.getMember().getId());
                 continue;
             }
             Member member = memberRepository.findById(habit.getMember().getId()).orElse(null);
@@ -60,7 +61,7 @@ public class NotificationScheduler {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Scheduled(cron = "0 0 22 * * *")
     public void sendHabitTrackerReminder() {
         log.info("check habitTrackerReminder (22:00)");
