@@ -5,6 +5,7 @@ import com.team2002.capstone.domain.Member;
 import com.team2002.capstone.domain.Profile;
 import com.team2002.capstone.dto.BookLoanResponseDto;
 import com.team2002.capstone.dto.BookLoanSaveRequestDto;
+import com.team2002.capstone.dto.BookLoanUpdateRequestDto;
 import com.team2002.capstone.exception.ResourceNotFoundException; // (ResourceNotFoundException이 없다면 IllegalArgumentException으로 대체)
 import com.team2002.capstone.repository.BookLoanRepository;
 import com.team2002.capstone.repository.MemberRepository; // MemberRepository 추가
@@ -92,6 +93,20 @@ public class BookLoanService {
         }
 
         bookLoanRepository.delete(loan);
+    }
+
+    @Transactional
+    public BookLoanResponseDto updateLoan(long loanId, BookLoanUpdateRequestDto requestDto) {
+        Profile profile = getCurrentProfile();
+        BookLoan loan = bookLoanRepository.findById(loanId)
+                .orElseThrow(() ->  new ResourceNotFoundException("대출기록이 없습니다."));
+        if (!Objects.equals(loan.getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 대출 기록을 수정할 권한이 없습니다.");
+        }
+
+        loan.update(requestDto);
+
+        return new BookLoanResponseDto(loan);
     }
 
     private Profile getCurrentProfile() {

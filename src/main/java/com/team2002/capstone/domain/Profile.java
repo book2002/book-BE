@@ -48,6 +48,13 @@ public class Profile extends BaseEntity {
     @JsonManagedReference("profile-loans")
     private List<BookLoan> bookLoans = new ArrayList<>();
 
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("profile-favorites")
+    @Builder.Default
+    private List<FavoriteLibrary> favoriteLibraries = new ArrayList<>();
+
+
     public Profile() {
     }
 }

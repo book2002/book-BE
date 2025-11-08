@@ -1,6 +1,7 @@
 package com.team2002.capstone.domain;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.team2002.capstone.dto.BookLoanUpdateRequestDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,4 +49,15 @@ public class BookLoan {
         this.isReturned = true;
     } // 반납완료
 
+    public void update(BookLoanUpdateRequestDto dto) {
+        this.bookTitle = dto.getBookTitle();
+        this.libraryName = dto.getLibraryName();
+        this.checkoutDate = LocalDate.parse(dto.getCheckoutDate());
+
+        if (dto.getDueDate() != null && !dto.getDueDate().isEmpty()) {
+            this.dueDate = LocalDate.parse(dto.getDueDate());
+        } else {
+            this.dueDate = null;
+        }
+    }
 }

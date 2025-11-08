@@ -16,14 +16,7 @@ public class LibraryResponseDto {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Response {
-        private Libs libs; // "libs" 키
-    }
-
-    @Getter
-    @NoArgsConstructor
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Libs {
-        private List<LibWrapper> lib; // "lib" 키 (이름이 lib이지만 실제로는 목록임)
+        private List<LibWrapper> libs;// "libs" 키
     }
 
     @Getter

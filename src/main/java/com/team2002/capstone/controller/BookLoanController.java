@@ -5,6 +5,7 @@ package com.team2002.capstone.controller;
 // import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.team2002.capstone.dto.BookLoanResponseDto;
 import com.team2002.capstone.dto.BookLoanSaveRequestDto;
+import com.team2002.capstone.dto.BookLoanUpdateRequestDto;
 import com.team2002.capstone.service.BookLoanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -55,4 +56,14 @@ public class BookLoanController {
         bookLoanService.deleteLoan(loanId);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{loanId}")
+    public ResponseEntity<BookLoanResponseDto> updateLoan(
+            @PathVariable Long loanId,
+            @Valid @RequestBody BookLoanUpdateRequestDto requestDto) {
+
+        BookLoanResponseDto updatedLoan = bookLoanService.updateLoan(loanId, requestDto);
+        return ResponseEntity.ok(updatedLoan);
+    }
+
 }
