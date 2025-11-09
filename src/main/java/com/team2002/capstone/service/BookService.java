@@ -1,17 +1,14 @@
 package com.team2002.capstone.service;
 
-import com.team2002.capstone.domain.BookShelf;
-import com.team2002.capstone.domain.BookShelfItem;
-import com.team2002.capstone.domain.Review;
+import com.team2002.capstone.domain.*;
 import com.team2002.capstone.dto.*;
-import com.team2002.capstone.repository.ReviewRepository;
+import com.team2002.capstone.exception.ResourceNotFoundException;
+import com.team2002.capstone.repository.*;
+import com.team2002.capstone.util.SecurityUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import com.team2002.capstone.repository.BookShelfItemRepository;
-import com.team2002.capstone.repository.BookShelfRepository;
-import com.team2002.capstone.domain.MemorableSentence;
-import com.team2002.capstone.repository.MemorableSentenceRepository;
 
 
 import java.time.LocalDate;
@@ -20,41 +17,55 @@ import java.time.temporal.ChronoUnit;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookService {
 
     private final BookShelfRepository bookShelfRepository;
     private final BookShelfItemRepository bookShelfItemRepository;
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
     private final ReviewRepository reviewRepository;
     private final MemorableSentenceRepository memorableSentenceRepository;
+    private final MemberRepository memberRepository;
+    private final ProfileRepository profileRepository;
+
+
     // 카카오 REST API 키를 입력
     private final String KAKAO_REST_API_KEY = "a3447f2a4204dc00c0f3f2f6ca9a7efb";
 
-    public BookService(WebClient.Builder webClientBuilder,
+    /** public BookService(WebClient.Builder webClientBuilder,
                        BookShelfRepository bookShelfRepository,
                        BookShelfItemRepository bookShelfItemRepository, ReviewRepository reviewRepository,
-                       MemorableSentenceRepository memorableSentenceRepository) {
+                       MemorableSentenceRepository memorableSentenceRepository,
+                       MemberRepository memberRepository,
+                       ProfileRepository profileRepository) {
         this.webClient = webClientBuilder.baseUrl("https://dapi.kakao.com").build();
         this.bookShelfRepository = bookShelfRepository;
         this.bookShelfItemRepository = bookShelfItemRepository;
         this.reviewRepository = reviewRepository;
         this.memorableSentenceRepository = memorableSentenceRepository;
-    }
+        this.memberRepository = memberRepository;
+        this.profileRepository = profileRepository;
+    } **/
 
     // API에서 받은 DTO를 그대로 반환
     public List<BookDto> searchBooks(String query) {
-        KakaoBookSearchResponseDto responseDto = webClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/v3/search/book").queryParam("query", query).build())
-                .header("Authorization", "KakaoAK " + KAKAO_REST_API_KEY)
-                .retrieve()
-                .bodyToMono(KakaoBookSearchResponseDto.class)
-                .block();
-
-        // API 응답에서 책 목록(DTO 리스트)만 추출하여 반환
-        return responseDto.getDocuments();
+        // Builder를 사용하여 WebClient 인스턴스 생성
+        WebClient webClient = webClientBuilder.baseUrl("https://dapi.kakao.com").build();
+        try {
+            KakaoBookSearchResponseDto responseDto = webClient.get()
+                    .uri(uriBuilder -> uriBuilder.path("/v3/search/book").queryParam("query", query).build())
+                    .header("Authorization", "KakaoAK " + KAKAO_REST_API_KEY)
+                    .retrieve().bodyToMono(KakaoBookSearchResponseDto.class).block();
+            return (responseDto != null && responseDto.getDocuments() != null) ? responseDto.getDocuments() : Collections.emptyList();
+        } catch (Exception e) {
+            System.err.println("### API 호출 과정에서 예외 발생: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     public List<BookDto> getRecommendedBooks() {
@@ -97,50 +108,63 @@ public class BookService {
 
     //BookShelf
     @Transactional
-    // 반환 타입을 DTO로 변경
     public BookShelfItemDto saveBookToMyShelf(BookSaveRequestDto requestDto) {
-        BookShelf defaultShelf = bookShelfRepository.findById(1L)
-                .orElseGet(() -> bookShelfRepository.save(new BookShelf("내 책장")));
+        Profile profile = getCurrentProfile();
+        BookShelf userShelf = bookShelfRepository.findByProfile(profile)
+                .orElseGet(() -> bookShelfRepository.save(new BookShelf("내 책장", profile))); // (BookShelf 생성자 순서 (String, Profile) 가정)
 
-        bookShelfItemRepository.findByIsbnAndBookShelf(requestDto.getIsbn(), defaultShelf)
+        bookShelfItemRepository.findByIsbnAndBookShelf(requestDto.getIsbn(), userShelf)
                 .ifPresent(item -> {
                     throw new IllegalStateException("이미 책장에 추가된 책입니다.");
                 });
 
-        // ▼▼▼ 올바른 생성자 호출 (8개 인자) ▼▼▼
         BookShelfItem newItem = new BookShelfItem(
                 requestDto.getIsbn(),
                 requestDto.getTitle(),
-                (requestDto.getAuthors() != null) ? String.join(", ", requestDto.getAuthors()) : null, // authors 처리 (null 가능하게)
+                (requestDto.getAuthors() != null) ? String.join(", ", requestDto.getAuthors()) : null,
                 requestDto.getThumbnail(),
-                defaultShelf,
+                userShelf,
                 requestDto.getState(),
                 requestDto.getCurrentPage(),
                 requestDto.getTotalPage()
         );
         BookShelfItem savedItem = bookShelfItemRepository.save(newItem);
-        // Entity -> Response DTO로 변환하여 반환
         return new BookShelfItemDto(savedItem);
     }
 
     public List<BookShelfItemDto> getMyShelfItems() {
-        // ID가 1인 책장
-        return bookShelfRepository.findById(1L)
-                .map(bookShelfItemRepository::findByBookShelf)
-                .orElse(Collections.emptyList()).stream()
+        Profile profile = getCurrentProfile();
+        BookShelf userShelf = bookShelfRepository.findByProfile(profile)
+                .orElseGet(() -> {
+
+                    return bookShelfRepository.save(new BookShelf("내 책장", profile));
+                });
+
+        return bookShelfItemRepository.findByBookShelf(userShelf).stream()
                 .map(BookShelfItemDto::new)
                 .collect(Collectors.toList());
     }
+
+    @Transactional
     public void deleteBookFromMyShelf(Long itemId) {
+        Profile profile = getCurrentProfile();
+        BookShelfItem item = bookShelfItemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("삭제할 책을 찾을 수 없습니다."));
+
+        if (!Objects.equals(item.getBookShelf().getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 책을 삭제할 권한이 없습니다.");
+        }
+
         bookShelfItemRepository.deleteById(itemId);
     }
 
     // Review
     @Transactional
     public ReviewResponseDto saveReview(ReviewSaveRequestDto reviewDto) {
+        Profile profile = getCurrentProfile();
         BookShelfItem bookShelfItem = bookShelfItemRepository.findById(reviewDto.getItemId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다. itemId=" + reviewDto.getItemId()));
-        Review newReview = new Review(reviewDto, bookShelfItem);
+        Review newReview = new Review(reviewDto, bookShelfItem,profile);
         Review savedReview = reviewRepository.save(newReview);
         return new ReviewResponseDto(savedReview);
     }
@@ -153,67 +177,107 @@ public class BookService {
 
     @Transactional
     public ReviewResponseDto updateReview(Long reviewId, ReviewUpdateRequestDto requestDto) { // DTO 변경
+        Profile profile = getCurrentProfile();
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰입니다. reviewId=" + reviewId));
-
-        review.update(requestDto); // Entity의 update 메소드도 이 DTO를 받도록 수정 필요
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리뷰입니다."));
+        if (!Objects.equals(review.getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 리뷰를 수정할 권한이 없습니다.");
+        }
+        review.update(requestDto);
         return new ReviewResponseDto(review);
     }
 
     public void deleteReview(Long reviewId) {
-        if (!reviewRepository.existsById(reviewId)) {
-            throw new IllegalArgumentException("존재하지 않는 리뷰입니다. reviewId=" + reviewId);
+        Profile profile = getCurrentProfile();
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("삭제할 리뷰를 찾을 수 없습니다."));
+        if (!Objects.equals(review.getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 리뷰를 삭제할 권한이 없습니다.");
         }
         reviewRepository.deleteById(reviewId);
     }
 
+    public List<ReviewResponseDto> getMyReviews() {
+        Profile profile = getCurrentProfile();
+        List<Review> myReviews = reviewRepository.findByProfile(profile);
+        return myReviews.stream()
+                .map(ReviewResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
     // MemorableSentence
     @Transactional
-    public MemorableSentence saveMemorableSentence(MemorableSentenceDto dto) {
+    public MemorableSentenceResponseDto saveMemorableSentence(MemorableSentenceSaveRequestDto dto) {
+        Profile profile = getCurrentProfile();
         BookShelfItem bookShelfItem = bookShelfItemRepository.findById(dto.getItemId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다. itemId=" + dto.getItemId()));
-        MemorableSentence newSentence = new MemorableSentence(dto, bookShelfItem);
-        return memorableSentenceRepository.save(newSentence);
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다."));
+        MemorableSentence newSentence = new MemorableSentence(dto, bookShelfItem, profile);
+        MemorableSentence savedSentence = memorableSentenceRepository.save(newSentence);
+        return new MemorableSentenceResponseDto(savedSentence);
     }
 
-    public List<MemorableSentence> getMemorableSentencesByItemId(Long itemId) {
-        return memorableSentenceRepository.findByBookShelfItem_ItemId(itemId);
+    public List<MemorableSentenceResponseDto> getMemorableSentencesByItemId(Long itemId) {
+        return memorableSentenceRepository.findByBookShelfItem_ItemId(itemId).stream()
+                .map(MemorableSentenceResponseDto::new)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public MemorableSentence updateMemorableSentence(Long sentenceId, MemorableSentenceDto dto) {
+    public MemorableSentenceResponseDto updateMemorableSentence(Long sentenceId, MemorableSentenceSaveRequestDto dto) {
+        Profile profile = getCurrentProfile();
         MemorableSentence sentence = memorableSentenceRepository.findById(sentenceId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문장입니다. sentenceId=" + sentenceId));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 문장입니다."));
+        if (!Objects.equals(sentence.getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 문장을 수정할 권한이 없습니다.");
+        }
         sentence.update(dto);
-        return sentence;
+        return new MemorableSentenceResponseDto(sentence);
     }
 
+
+    @Transactional
     public void deleteMemorableSentence(Long sentenceId) {
-        if (!memorableSentenceRepository.existsById(sentenceId)) {
-            throw new IllegalArgumentException("존재하지 않는 문장입니다. sentenceId=" + sentenceId);
+        Profile profile = getCurrentProfile();
+        MemorableSentence sentence = memorableSentenceRepository.findById(sentenceId)
+                .orElseThrow(() -> new ResourceNotFoundException("삭제할 문장을 찾을 수 없습니다."));
+
+        if (!Objects.equals(sentence.getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 문장을 삭제할 권한이 없습니다.");
         }
         memorableSentenceRepository.deleteById(sentenceId);
     }
 
     // BookProgress
     @Transactional
-    // 반환 타입을 DTO로 변경
     public BookShelfItemDto updateBookProgress(Long itemId, ProgressUpdateRequestDto dto) {
+        Profile profile = getCurrentProfile();
         BookShelfItem item = bookShelfItemRepository.findById(itemId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다. itemId=" + itemId));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다."));
+        if (!Objects.equals(item.getBookShelf().getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 책의 진행률을 수정할 권한이 없습니다.");
+        }
         item.updateProgress(dto.getCurrentPage());
-        // Entity -> Response DTO로 변환하여 반환
         return new BookShelfItemDto(item);
     }
 
+    @Transactional
     public BookShelfItemDto updateBookState(Long itemId, BookStateUpdateRequestDto dto) {
+        Profile profile = getCurrentProfile();
         BookShelfItem item = bookShelfItemRepository.findById(itemId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다. itemId=" + itemId));
-        // Entity 내부 메소드 호출 (public으로 변경했다고 가정)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다."));
+        if (!Objects.equals(item.getBookShelf().getProfile().getId(), profile.getId())) {
+            throw new IllegalStateException("이 책의 상태를 수정할 권한이 없습니다.");
+        }
         item.updateStateAndPages(dto.getNewState(), dto.getCurrentPage(), dto.getTotalPage());
-        // Entity -> Response DTO로 변환하여 반환
-        BookShelfItem updatedItem = bookShelfItemRepository.save(item);
         return new BookShelfItemDto(item);
+    }
+
+    private Profile getCurrentProfile() {
+        String userEmail = SecurityUtil.getCurrentUsername();
+        Member member = memberRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("회원을 찾을 수 없습니다."));
+        return profileRepository.findByMember(member)
+                .orElseThrow(() -> new ResourceNotFoundException("현재 로그인한 사용자의 프로필을 찾을 수 없습니다."));
     }
 
 }

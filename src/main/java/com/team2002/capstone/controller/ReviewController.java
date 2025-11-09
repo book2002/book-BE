@@ -51,4 +51,11 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    // 내가 쓴 모든 리뷰 조회
+    @GetMapping("/my")
+    public ResponseEntity<List<ReviewResponseDto>> getMyReviews() {
+        List<ReviewResponseDto> responseDtos = bookService.getMyReviews();
+        return ResponseEntity.ok(responseDtos);
+    }
+
 }

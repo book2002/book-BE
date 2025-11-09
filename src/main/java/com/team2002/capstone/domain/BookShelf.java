@@ -1,5 +1,6 @@
 package com.team2002.capstone.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,13 +13,17 @@ public class BookShelf {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long shelfId;
 
-    // profile_id는 나중에 사용자 기능 추가 시 연결
-    // private Long profileId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @JsonBackReference("profile-bookshelf")
+    private Profile profile;
+
 
     @Column(nullable = false)
     private String shelfName;
 
-    public BookShelf(String shelfName) {
+    public BookShelf(String shelfName, Profile profile) {
+        this.profile = profile;
         this.shelfName = shelfName;
     }
 }

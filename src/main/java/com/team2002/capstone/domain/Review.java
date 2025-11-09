@@ -23,6 +23,11 @@ public class Review {
     @JsonBackReference
     private BookShelfItem bookShelfItem;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @JsonBackReference
+    private Profile profile;
+
     @Lob
     @Column(nullable = false)
     private String content;
@@ -31,8 +36,9 @@ public class Review {
     private boolean isPublic;
     private LocalDateTime createdAt;
 
-    public Review(ReviewSaveRequestDto reviewDto, BookShelfItem bookShelfItem) {
+    public Review(ReviewSaveRequestDto reviewDto, BookShelfItem bookShelfItem, Profile profile) {
         this.bookShelfItem = bookShelfItem;
+        this.profile = profile;
         this.content = reviewDto.getContent();
         this.rating = reviewDto.getRating();
         this.isPublic = reviewDto.isPublic();

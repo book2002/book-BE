@@ -48,13 +48,26 @@ public class Profile extends BaseEntity {
     @JsonManagedReference("profile-loans")
     private List<BookLoan> bookLoans = new ArrayList<>();
 
-
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("profile-favorites")
     @Builder.Default
     private List<FavoriteLibrary> favoriteLibraries = new ArrayList<>();
 
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("profile-review")
+    @Builder.Default
+    private List<Review> reviews = new ArrayList<>();
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("profile-sentence")
+    @Builder.Default
+    private List<MemorableSentence> memorableSentences = new ArrayList<>();
+
+    @OneToOne(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("profile-bookshelf")
+    private BookShelf bookShelf;
 
     public Profile() {
+        this.bookShelf = new BookShelf( "내 책장", this);
     }
 }
