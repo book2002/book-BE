@@ -1,44 +1,57 @@
 package com.team2002.capstone.controller;
 
 import com.team2002.capstone.domain.MemorableSentence;
-import com.team2002.capstone.dto.MemorableSentenceDto;
+import com.team2002.capstone.dto.MemorableSentenceResponseDto;
+import com.team2002.capstone.dto.MemorableSentenceSaveRequestDto;
 import com.team2002.capstone.service.BookService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/sentences") // '문장' 관련 API
 public class MemorableSentenceController {
 
     private final BookService bookService;
 
-    public MemorableSentenceController(BookService bookService) {
-        this.bookService = bookService;
-    }
-
-    // 기억에 남는 문장 저장
+    /**
+     * 기억에 남는 문장 저장
+     */
     @PostMapping
-    public ResponseEntity<MemorableSentence> saveSentence(@RequestBody MemorableSentenceDto dto) {
-        MemorableSentence savedSentence = bookService.saveMemorableSentence(dto);
-        return ResponseEntity.ok(savedSentence);
+    public ResponseEntity<MemorableSentenceResponseDto> saveSentence(
+            @Valid @RequestBody MemorableSentenceSaveRequestDto requestDto) {
+
+        // ▼▼▼ "MemorableSentence" -> "MemorableSentenceResponseDto"로 수정 ▼▼▼
+        MemorableSentenceResponseDto responseDto = bookService.saveMemorableSentence(requestDto);
+        return ResponseEntity.ok(responseDto);
     }
 
-    // 특정 책의 모든 문장 조회
+    /**
+     * 특정 책의 문장 목록 조회
+     */
     @GetMapping("/book/{itemId}")
-    public ResponseEntity<List<MemorableSentence>> getSentencesByItemId(@PathVariable Long itemId) {
-        List<MemorableSentence> sentences = bookService.getMemorableSentencesByItemId(itemId);
-        return ResponseEntity.ok(sentences);
+    public ResponseEntity<List<MemorableSentenceResponseDto>> getSentencesByItemId(@PathVariable Long itemId) {
+        List<MemorableSentenceResponseDto> responseDtos = bookService.getMemorableSentencesByItemId(itemId);
+        return ResponseEntity.ok(responseDtos);
     }
 
-    // 특정 문장 수정
+    /**
+     * 기억에 남는 문장 수정
+     */
     @PutMapping("/{sentenceId}")
-    public ResponseEntity<MemorableSentence> updateSentence(@PathVariable Long sentenceId, @RequestBody MemorableSentenceDto dto) {
-        MemorableSentence updatedSentence = bookService.updateMemorableSentence(sentenceId, dto);
-        return ResponseEntity.ok(updatedSentence);
+    public ResponseEntity<MemorableSentenceResponseDto> updateSentence(
+            @PathVariable Long sentenceId,
+            @Valid @RequestBody MemorableSentenceSaveRequestDto requestDto) {
+
+        MemorableSentenceResponseDto responseDto = bookService.updateMemorableSentence(sentenceId, requestDto);
+        return ResponseEntity.ok(responseDto);
     }
 
-    // 특정 문장 삭제
+
+     //기억에 남는 문장 삭제
     @DeleteMapping("/{sentenceId}")
     public ResponseEntity<Void> deleteSentence(@PathVariable Long sentenceId) {
         bookService.deleteMemorableSentence(sentenceId);

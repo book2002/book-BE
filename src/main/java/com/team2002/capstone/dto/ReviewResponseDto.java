@@ -10,6 +10,7 @@ public class ReviewResponseDto {
 
     private Long reviewId;
     private String content;
+    private String bookTitle;
     private Double rating;
     private boolean isPublic;
     private LocalDateTime createdAt;
@@ -22,6 +23,11 @@ public class ReviewResponseDto {
         this.rating = review.getRating();
         this.isPublic = review.isPublic();
         this.createdAt = review.getCreatedAt();
-        this.itemId = review.getBookShelfItem().getItemId();
+
+        // 연결된 BookShelfItem에서 책 정보를 가져옴
+        if (review.getBookShelfItem() != null) {
+            this.itemId = review.getBookShelfItem().getItemId();
+            this.bookTitle = review.getBookShelfItem().getTitle();
+        }
     }
 }

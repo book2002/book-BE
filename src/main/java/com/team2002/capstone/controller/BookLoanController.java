@@ -25,8 +25,6 @@ public class BookLoanController {
     @PostMapping
     public ResponseEntity<BookLoanResponseDto> saveLoan(
             @Valid @RequestBody BookLoanSaveRequestDto requestDto) { // @AuthenticationPrincipal 삭제
-
-
         BookLoanResponseDto responseDto = bookLoanService.saveLoan(requestDto);
         return ResponseEntity.ok(responseDto);
     }
