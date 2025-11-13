@@ -38,9 +38,4 @@ public class BookController {
         return ResponseEntity.ok(newReleases);
     }
 
-    @GetMapping("/bestsellers-by-birthdate")
-    public ResponseEntity<List<BookDto>> getBestsellersByBirthDate(@RequestParam String birthDate) {
-        List<BookDto> birthDateBestsellers = bookService.getBestsellersByBirthDate(birthDate);
-        return ResponseEntity.ok(birthDateBestsellers);
-    }
 }
