@@ -76,36 +76,6 @@ public class BookService {
         return searchBooks("신간");
     }
 
-    public List<BookDto> getBestsellersByAge(int age) {
-        int ageGroup = (age / 10) * 10;
-        String query = ageGroup + "대";
-
-        return searchBooks(query);
-    }
-
-    public List<BookDto> getBestsellersByBirthDate(String birthDate) {
-        int age = calculateAge(birthDate);
-        int ageGroup = (age / 10) * 10;
-        return getBestsellersByAge(ageGroup);
-    }
-
-    private int calculateAge(String birthDate) {
-        if (birthDate == null || birthDate.length() != 8) {
-            return 20; // 형식이 맞지 않으면 기본값 20세로 처리
-        }
-
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-            LocalDate birth = LocalDate.parse(birthDate, formatter);
-            LocalDate today = LocalDate.now();
-            return (int) ChronoUnit.YEARS.between(birth, today);
-        } catch (Exception e) {
-
-            System.err.println("잘못된 날짜 형식입니다: " + birthDate);
-            return 20; // 오류 발생 시 기본값 20세로 처리
-        }
-    }
-
     //BookShelf
     @Transactional
     public BookShelfItemDto saveBookToMyShelf(BookSaveRequestDto requestDto) {

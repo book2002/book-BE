@@ -1,9 +1,11 @@
 package com.team2002.capstone.dto;
 
 import com.team2002.capstone.domain.MemorableSentence;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+@Getter
 public class MemorableSentenceResponseDto {
     private Long sentenceId;
     private String content;
