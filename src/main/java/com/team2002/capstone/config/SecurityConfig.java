@@ -7,9 +7,12 @@ import com.team2002.capstone.config.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -27,18 +30,20 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-//                .cors(withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                 authorize -> authorize
-                        .requestMatchers( "/", "/swagger-ui/**", "/v3/api-docs/**", "/api/v1/**", "/api/auth/**").permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers( "/", "/swagger-ui/**", "/v3/api-docs/**",
+                                "/api/v1/member/login", "/api/v1/member/signup",
+                                "oauth2/authorization/google", "/login/oauth2/code/**").permitAll()
                         .anyRequest().authenticated()
 
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOauth2UserService) // ⭐ 커스텀 서비스 등록
+                                .userService(customOauth2UserService)
                         )
-                        .defaultSuccessUrl("/login-success", true) // 로그인 성공 후 리디렉션될 url
                         .successHandler(oAuth2LoginSuccessHandler)
                 )
                 .logout((logoutConfig) -> logoutConfig.logoutSuccessUrl("/")
@@ -53,5 +58,10 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder getPasswordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }

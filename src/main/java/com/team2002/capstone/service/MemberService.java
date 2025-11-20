@@ -11,6 +11,10 @@ import com.team2002.capstone.repository.MemberRepository;
 import com.team2002.capstone.repository.ProfileRepository;
 import com.team2002.capstone.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,12 +27,14 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
+@Slf4j
 public class MemberService {
 
     private final MemberRepository memberRepository;
     private final ProfileRepository profileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
 
     @Transactional //readOnly = false -> default
     public MemberResponseDTO save(Member member) {
@@ -61,7 +67,11 @@ public class MemberService {
             throw new IllegalStateException("구글 회원은 구글 로그인을 이용해주세요.");
         }
 
-        if(!passwordEncoder.matches(requestDTO.getPassword(), member.getPassword())) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(requestDTO.getEmail(), requestDTO.getPassword())
+            );
+        } catch (AuthenticationException e) {
             throw new IllegalStateException("비밀번호가 일치하지 않습니다.");
         }
 
