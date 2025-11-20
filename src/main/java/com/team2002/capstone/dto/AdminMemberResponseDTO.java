@@ -3,9 +3,11 @@ package com.team2002.capstone.dto;
 import com.team2002.capstone.domain.Member;
 import com.team2002.capstone.domain.Profile;
 import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+@Getter
 @Builder
 public class AdminMemberResponseDTO {
     private Long memberId;
