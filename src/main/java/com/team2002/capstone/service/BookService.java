@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import java.time.ZonedDateTime;
 
 
 import java.time.LocalDate;
@@ -52,28 +53,43 @@ public class BookService {
         this.profileRepository = profileRepository;
     } **/
 
-    // API에서 받은 DTO를 그대로 반환
     public List<BookDto> searchBooks(String query) {
-        // Builder를 사용하여 WebClient 인스턴스 생성
+        return searchBooks(query, "accuracy");
+    }
+
+    // 2. 정렬 기준을 포함한 검색 (실제 API 호출 수행)
+    public List<BookDto> searchBooks(String query, String sort) {
         WebClient webClient = webClientBuilder.baseUrl("https://dapi.kakao.com").build();
+
         try {
             KakaoBookSearchResponseDto responseDto = webClient.get()
-                    .uri(uriBuilder -> uriBuilder.path("/v3/search/book").queryParam("query", query).build())
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/v3/search/book")
+                            .queryParam("query", query)
+                            .queryParam("sort", sort) // 정렬 파라미터 적용
+                            .queryParam("size", 50)   // 필터링을 위해 넉넉하게 50개 가져옴
+                            .build())
                     .header("Authorization", "KakaoAK " + KAKAO_REST_API_KEY)
-                    .retrieve().bodyToMono(KakaoBookSearchResponseDto.class).block();
-            return (responseDto != null && responseDto.getDocuments() != null) ? responseDto.getDocuments() : Collections.emptyList();
+                    .retrieve()
+                    .bodyToMono(KakaoBookSearchResponseDto.class)
+                    .block();
+
+            return (responseDto != null && responseDto.getDocuments() != null) ?
+                    responseDto.getDocuments() : Collections.emptyList();
         } catch (Exception e) {
             System.err.println("### API 호출 과정에서 예외 발생: " + e.getMessage());
             return Collections.emptyList();
         }
     }
 
+
     public List<BookDto> getRecommendedBooks() {
         return searchBooks("베스트셀러");
     }
 
     public List<BookDto> getNewReleases() {
-        return searchBooks("신간");
+        // 복잡한 날짜 필터링 없이, 단순히 "신간" 키워드로 최신순(latest) 정렬하여 반환합니다.
+        return searchBooks("소설", "latest");
     }
 
     //BookShelf
