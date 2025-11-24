@@ -77,14 +77,18 @@ public class MemberService {
 
         Optional<Profile> memberProfile = profileRepository.findByMember(member);
         boolean isNewUser = memberProfile.isEmpty();
+        Long profileId = memberProfile.map(Profile::getId).orElse(null);
 
-        JwtTokenDTO jwtTokenDTO = jwtTokenProvider.generateToken(member, isNewUser);
+        JwtTokenDTO jwtTokenDTO = jwtTokenProvider.generateToken(authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(requestDTO.getEmail(), requestDTO.getPassword())
+        ), memberProfile);
 
         return LoginResponseDTO.builder()
                 .grantType(jwtTokenDTO.getGrantType())
                 .accessToken(jwtTokenDTO.getAccessToken())
                 .refreshToken(jwtTokenDTO.getRefreshToken())
                 .isNewUser(isNewUser)
+                .profileId(profileId)
                 .build();
     }
 

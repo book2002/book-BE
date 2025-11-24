@@ -1,6 +1,7 @@
 package com.team2002.capstone.config.jwt;
 
 import com.team2002.capstone.domain.Member;
+import com.team2002.capstone.domain.Profile;
 import com.team2002.capstone.dto.JwtTokenDTO;
 import com.team2002.capstone.dto.LoginResponseDTO;
 import io.jsonwebtoken.*;
@@ -18,10 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Key;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,11 +36,12 @@ public class JwtTokenProvider {
 
     @Transactional
     public LoginResponseDTO generateTokenForOAuth(Member member) {
+        Optional<Profile> profile = Optional.ofNullable(member.getProfile());
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 member.getEmail(), null, List.of(new SimpleGrantedAuthority(member.getRole().name()))
         );
 
-        JwtTokenDTO jwtTokenDTO = generateToken(authentication); // 기존 메서드 사용
+        JwtTokenDTO jwtTokenDTO = generateToken(authentication, profile); // 기존 메서드 사용
 
         return LoginResponseDTO.builder()
                 .grantType(jwtTokenDTO.getGrantType())
@@ -52,6 +51,7 @@ public class JwtTokenProvider {
     }
 
     public JwtTokenDTO generateToken(Member member, boolean isNewUser) {
+        Optional<Profile> profile = Optional.ofNullable(member.getProfile());
         // Member의 권한을 Authentication 객체로 변환
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 member.getEmail(),
@@ -59,10 +59,10 @@ public class JwtTokenProvider {
                 List.of(new SimpleGrantedAuthority(member.getRole().name()))
         );
 
-        return generateToken(authentication);
+        return generateToken(authentication, profile);
     }
 
-    public JwtTokenDTO generateToken(Authentication authentication) {
+    public JwtTokenDTO generateToken(Authentication authentication, Optional<Profile> optionalProfile) {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
@@ -71,19 +71,29 @@ public class JwtTokenProvider {
         Date issuedAt = new Date(now);
         Date accessTokenExpiresIn = new Date(now + 86400000);
 
+        Optional<Long> profileIdOpt = optionalProfile.map(Profile::getId); // profileId
+
         // AccessToken
-        String accessToken = Jwts.builder()
+        JwtBuilder accessTokenBuilder = Jwts.builder()
                 .setSubject(authentication.getName())
-                .claim("auth", authorities)
+                .claim("auth", authorities);
+        if (profileIdOpt.isPresent()) {
+            accessTokenBuilder = accessTokenBuilder.claim("profileId", profileIdOpt.get());
+        }
+        String accessToken = accessTokenBuilder
                 .setIssuedAt(issuedAt)
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
         // RefreshToken
-        String refreshToken = Jwts.builder()
+        JwtBuilder refreshTokenBuilder = Jwts.builder()
                 .setSubject(authentication.getName())
-                .claim("auth", authorities)
+                .claim("auth", authorities);
+        if (profileIdOpt.isPresent()) {
+            refreshTokenBuilder = refreshTokenBuilder.claim("profileId", profileIdOpt.get());
+        }
+        String refreshToken = refreshTokenBuilder
                 .setIssuedAt(new Date(now))
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
