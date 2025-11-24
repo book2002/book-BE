@@ -13,4 +13,5 @@ public class LoginResponseDTO {
     private String refreshToken;
 
     private boolean isNewUser;
+    private Long profileId;
 }

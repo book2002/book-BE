@@ -3,6 +3,7 @@ package com.team2002.capstone.config.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2002.capstone.config.jwt.JwtTokenProvider;
 import com.team2002.capstone.domain.Member;
+import com.team2002.capstone.domain.Profile;
 import com.team2002.capstone.dto.JwtTokenDTO;
 import com.team2002.capstone.dto.LoginResponseDTO;
 import com.team2002.capstone.repository.ProfileRepository;
@@ -15,6 +16,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -31,7 +33,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         CustomOauth2UserDetails userDetails = (CustomOauth2UserDetails) authentication.getPrincipal();
         Member member = userDetails.getMember();
 
-        boolean isNewUser = profileRepository.findByMember(member).isEmpty();
+        Optional<Profile> optionalProfile = profileRepository.findByMember(member);
+
+        boolean isNewUser = optionalProfile.isEmpty();
+        Long profileId = optionalProfile.map(Profile::getId).orElse(null);
 
         JwtTokenDTO jwtTokenDTO = jwtTokenProvider.generateToken(member, isNewUser);
         LoginResponseDTO loginResponseDTO = LoginResponseDTO.builder()
@@ -39,6 +44,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .accessToken(jwtTokenDTO.getAccessToken())
                 .refreshToken(jwtTokenDTO.getRefreshToken())
                 .isNewUser(isNewUser)
+                .profileId(profileId)
                 .build();
 
         response.setContentType("application/json;charset=UTF-8");
