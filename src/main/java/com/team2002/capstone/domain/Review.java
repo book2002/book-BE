@@ -41,14 +41,14 @@ public class Review {
         this.profile = profile;
         this.content = reviewDto.getContent();
         this.rating = reviewDto.getRating();
-        this.isPublic = reviewDto.isPublic();
+        this.isPublic = reviewDto.getIsPublic();
         this.createdAt = LocalDateTime.now();
     }
 
     public void update(ReviewUpdateRequestDto reviewDto) {
         this.content = reviewDto.getContent();
         this.rating = reviewDto.getRating();
-        this.isPublic = reviewDto.isPublic();
+        this.isPublic = reviewDto.getIsPublic();
     }
 }
 

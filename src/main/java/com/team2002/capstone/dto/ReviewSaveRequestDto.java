@@ -1,5 +1,6 @@
 package com.team2002.capstone.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -14,6 +15,6 @@ public class ReviewSaveRequestDto {
     @NotBlank(message = "감상문 내용을 입력해주세요.")
     private String content;   // 감상문 내용
 
-    private Double rating;      // 별점
-    private boolean isPublic; // 공개 여부
+    private Double rating;// 별점
+    private Boolean isPublic; // 공개 여부
 }

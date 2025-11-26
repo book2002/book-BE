@@ -150,6 +150,10 @@ public class BookService {
         Profile profile = getCurrentProfile();
         BookShelfItem bookShelfItem = bookShelfItemRepository.findById(reviewDto.getItemId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 책입니다. itemId=" + reviewDto.getItemId()));
+        reviewRepository.findByBookShelfItemAndProfile(bookShelfItem, profile)
+                .ifPresent(review -> {
+                    throw new IllegalStateException("이 책에 대한 독서 감상문을 이미 작성했습니다. 수정 기능을 이용해주세요.");
+                });
         Review newReview = new Review(reviewDto, bookShelfItem,profile);
         Review savedReview = reviewRepository.save(newReview);
         return new ReviewResponseDto(savedReview);
@@ -173,6 +177,7 @@ public class BookService {
         return new ReviewResponseDto(review);
     }
 
+    @Transactional
     public void deleteReview(Long reviewId) {
         Profile profile = getCurrentProfile();
         Review review = reviewRepository.findById(reviewId)

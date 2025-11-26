@@ -1,5 +1,6 @@
 package com.team2002.capstone.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.team2002.capstone.domain.Review;
 import lombok.Getter;
 import java.time.LocalDateTime;
@@ -12,7 +13,7 @@ public class ReviewResponseDto {
     private String content;
     private String bookTitle;
     private Double rating;
-    private boolean isPublic;
+    private Boolean isPublic;
     private LocalDateTime createdAt;
     private Long itemId; // 어떤 책에 대한 리뷰인지
 
