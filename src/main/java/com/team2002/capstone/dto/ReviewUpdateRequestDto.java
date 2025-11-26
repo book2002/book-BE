@@ -1,5 +1,6 @@
 package com.team2002.capstone.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,5 +14,5 @@ public class ReviewUpdateRequestDto {
     private String content;
 
     private Double rating;
-    private boolean isPublic;
+    private Boolean isPublic;
 }
