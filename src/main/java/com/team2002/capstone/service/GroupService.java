@@ -76,7 +76,7 @@ public class GroupService {
         ReadingGroup readingGroup = readingGroupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
 
-        if (groupMemberRepository.findByProfileAndGroup(profile, readingGroup).isEmpty()) {
+        if (groupMemberRepository.findByProfileAndGroup(profile, readingGroup).isPresent()) {
             throw new IllegalStateException("이미 모임에 가입되어 있습니다.");
         }
 
