@@ -18,7 +18,7 @@ public class ReadingGoal extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "year", nullable = false)
     private int targetYear;
 
     @Column(nullable = false)

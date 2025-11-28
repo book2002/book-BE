@@ -11,6 +11,7 @@ import com.team2002.capstone.repository.HabitTrackerRepository;
 import com.team2002.capstone.repository.MemberRepository;
 import com.team2002.capstone.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HabitTrackerService {
     private final HabitTrackerRepository habitTrackerRepository;
     private final MemberRepository memberRepository;
@@ -83,6 +85,16 @@ public class HabitTrackerService {
         return HabitStatusUpdateResponseDTO.builder()
                 .memberId(member.getId())
                 .isActive(member.isHabitTrackerActive())
+                .build();
+    }
+
+    public HabitStatusUpdateResponseDTO getHabitStatus() {
+        Member member = getCurrentMember();
+        boolean habitTrackerActive = member.isHabitTrackerActive();
+
+        return HabitStatusUpdateResponseDTO.builder()
+                .memberId(member.getId())
+                .isActive(habitTrackerActive)
                 .build();
     }
 

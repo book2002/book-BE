@@ -41,6 +41,7 @@ public class ReadingHabitService {
                  .id(readingHabit.getId())
                  .targetTime(readingHabit.getTargetTime())
                  .recurringDays(stringToList(readingHabit.getRecurringDays()))
+                .isActive(readingHabit.isActive())
                  .build();
     }
 
