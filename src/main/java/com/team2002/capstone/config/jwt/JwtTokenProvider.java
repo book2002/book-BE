@@ -38,7 +38,7 @@ public class JwtTokenProvider {
     public LoginResponseDTO generateTokenForOAuth(Member member) {
         Optional<Profile> profile = Optional.ofNullable(member.getProfile());
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                member.getEmail(), null, List.of(new SimpleGrantedAuthority(member.getRole().name()))
+                member.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()))
         );
 
         JwtTokenDTO jwtTokenDTO = generateToken(authentication, profile); // 기존 메서드 사용
@@ -56,7 +56,7 @@ public class JwtTokenProvider {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 member.getEmail(),
                 member.getPassword(),
-                List.of(new SimpleGrantedAuthority(member.getRole().name()))
+                List.of(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()))
         );
 
         return generateToken(authentication, profile);

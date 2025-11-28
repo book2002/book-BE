@@ -32,7 +32,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new User(
                 member.getEmail(),
                 member.getPassword(),
-                List.of(new SimpleGrantedAuthority(member.getRole().name()))
+                List.of(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()))
         );
     }
 }
