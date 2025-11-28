@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 public class HabitStatusUpdateRequestDTO {
     @NotNull
-    private boolean isActive;
+    private boolean active;
 }

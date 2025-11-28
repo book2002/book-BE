@@ -44,9 +44,16 @@ public class HabitTrackerController {
     }
 
     @Operation(summary = "알림 활성화/비활성화")
-    @PutMapping("/active")
+    @PatchMapping("/active")
     public ResponseEntity<HabitStatusUpdateResponseDTO> updateActiveStatus(@RequestBody @Validated HabitStatusUpdateRequestDTO habitStatusUpdateRequestDTO) {
         HabitStatusUpdateResponseDTO habitStatusUpdateResponseDTO = habitTrackerService.updateHabitActiveStatus(habitStatusUpdateRequestDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(habitStatusUpdateResponseDTO);
+    }
+
+    @Operation(summary = "알림 활성화 상태 조회")
+    @GetMapping("/active")
+    public ResponseEntity<HabitStatusUpdateResponseDTO> getActiveStatus() {
+        HabitStatusUpdateResponseDTO habitStatusUpdateResponseDTO = habitTrackerService.getHabitStatus();
         return ResponseEntity.status(HttpStatus.OK).body(habitStatusUpdateResponseDTO);
     }
 }
