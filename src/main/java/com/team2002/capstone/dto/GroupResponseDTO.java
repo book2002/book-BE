@@ -1,10 +1,12 @@
 package com.team2002.capstone.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
 
 @Builder
 @Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class GroupResponseDTO {
     private Long groupId;
     private String name;
@@ -14,5 +16,6 @@ public class GroupResponseDTO {
     private int maxMembers;
     private int currentMembers;
     private String groupImageUrl;
-    private boolean isJoined;
+    private Boolean isJoined;
+    private Boolean isOwner;
 }

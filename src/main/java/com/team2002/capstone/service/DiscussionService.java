@@ -50,6 +50,8 @@ public class DiscussionService {
                 .isClosed(discussion.isClosed())
                 .createdAt(discussion.getCreatedAt())
                 .commentCount(0)
+                .isMyDiscussion(true)
+                .canModify(true)
                 .build();
     }
 
@@ -62,6 +64,8 @@ public class DiscussionService {
         Page<Discussion> discussions = discussionRepository.findAllByGroupOrderByCreatedAtDesc(readingGroup, pageable);
         return discussions.map(discussion -> {
             long commentCount = discussionCommentRepository.countByDiscussion(discussion);
+            boolean isMyDiscussion = discussion.getAuthor().getId() == author.getId();
+            boolean isOwner = discussion.getGroup().getOwner().getId() == author.getId();
             return DiscussionResponseDTO.builder()
                     .discussionId(discussion.getId())
                     .groupId(discussion.getGroup().getId())
@@ -71,6 +75,8 @@ public class DiscussionService {
                     .isClosed(discussion.isClosed())
                     .createdAt(discussion.getCreatedAt())
                     .commentCount(commentCount)
+                    .isMyDiscussion(isMyDiscussion)
+                    .canModify(isMyDiscussion || isOwner)
                     .build();
         });
     }
@@ -82,6 +88,8 @@ public class DiscussionService {
         validateDiscussionAccess(profile, discussion);
 
         long commentCount = discussionCommentRepository.countByDiscussion(discussion);
+        boolean isMyDiscussion = discussion.getAuthor().getId() == profile.getId();
+        boolean isOwner = discussion.getGroup().getOwner().getId() == profile.getId();
         return DiscussionResponseDTO.builder()
                 .discussionId(discussion.getId())
                 .groupId(discussion.getGroup().getId())
@@ -91,6 +99,8 @@ public class DiscussionService {
                 .isClosed(discussion.isClosed())
                 .createdAt(discussion.getCreatedAt())
                 .commentCount(commentCount)
+                .isMyDiscussion(isMyDiscussion)
+                .canModify(isMyDiscussion || isOwner)
                 .build();
     }
 
@@ -100,11 +110,14 @@ public class DiscussionService {
         Discussion discussion = discussionRepository.findById(discussionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Discussion not found"));
         validateDiscussionAccess(profile, discussion);
+        validateDiscussionPermission(profile, discussion);
 
         discussion.setTopicTitle(requestDTO.getTopicTitle());
         discussion.setTopicContent(requestDTO.getTopicContent());
 
         Long commentCount = discussionCommentRepository.countByDiscussion(discussion);
+        boolean isMyDiscussion = discussion.getAuthor().getId() == profile.getId();
+        boolean isOwner = discussion.getGroup().getOwner().getId() == profile.getId();
         return DiscussionResponseDTO.builder()
                 .discussionId(discussion.getId())
                 .groupId(discussion.getGroup().getId())
@@ -114,6 +127,8 @@ public class DiscussionService {
                 .isClosed(discussion.isClosed())
                 .createdAt(discussion.getCreatedAt())
                 .commentCount(commentCount)
+                .isMyDiscussion(isMyDiscussion)
+                .canModify(isMyDiscussion || isOwner)
                 .build();
     }
 
@@ -123,6 +138,7 @@ public class DiscussionService {
         Discussion discussion = discussionRepository.findById(discussionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Discussion not found"));
         validateDiscussionAccess(profile, discussion);
+        validateDiscussionPermission(profile, discussion);
         discussionRepository.delete(discussion);
     }
 
@@ -136,6 +152,8 @@ public class DiscussionService {
         discussion.setClosed(requestDTO.getIsClosed());
 
         Long commentCount = discussionCommentRepository.countByDiscussion(discussion);
+        boolean isMyDiscussion = discussion.getAuthor().getId() == profile.getId();
+        boolean isOwner = discussion.getGroup().getOwner().getId() == profile.getId();
         return DiscussionResponseDTO.builder()
                 .discussionId(discussion.getId())
                 .groupId(discussion.getGroup().getId())
@@ -145,6 +163,8 @@ public class DiscussionService {
                 .isClosed(discussion.isClosed())
                 .createdAt(discussion.getCreatedAt())
                 .commentCount(commentCount)
+                .isMyDiscussion(isMyDiscussion)
+                .canModify(isMyDiscussion || isOwner)
                 .build();
     }
 
@@ -174,6 +194,7 @@ public class DiscussionService {
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .isMyComment(true)
+                .canModify(true)
                 .build();
     }
 
@@ -186,14 +207,19 @@ public class DiscussionService {
         List<DiscussionComment> comments = discussionCommentRepository.findAllByDiscussionOrderByCreatedAtDesc(discussion);
 
         return comments.stream()
-                .map(comment -> DiscussionCommentResponseDTO.builder()
-                        .commentId(comment.getId())
-                        .discussionId(comment.getDiscussion().getId())
-                        .authorNickname(comment.getAuthor().getNickname())
-                        .content(comment.getContent())
-                        .createdAt(comment.getCreatedAt())
-                        .isMyComment(comment.getAuthor().getId() == profile.getId())
-                        .build())
+                .map(comment -> {
+                    boolean isMyComment = comment.getAuthor().getId() == profile.getId();
+                    boolean isOwner = comment.getDiscussion().getGroup().getOwner().getId() == profile.getId();
+                    return DiscussionCommentResponseDTO.builder()
+                            .commentId(comment.getId())
+                            .discussionId(comment.getDiscussion().getId())
+                            .authorNickname(comment.getAuthor().getNickname())
+                            .content(comment.getContent())
+                            .createdAt(comment.getCreatedAt())
+                            .isMyComment(isMyComment)
+                            .canModify(isMyComment || isOwner)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -206,13 +232,17 @@ public class DiscussionService {
 
         comment.setContent(requestDTO.getContent());
         discussionCommentRepository.save(comment);
+
+        boolean isMyComment = comment.getAuthor().getId() == author.getId();
+        boolean isOwner = comment.getDiscussion().getGroup().getOwner().getId() == author.getId();
         return DiscussionCommentResponseDTO.builder()
                 .commentId(comment.getId())
                 .discussionId(comment.getDiscussion().getId())
                 .authorNickname(author.getNickname())
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
-                .isMyComment(true)
+                .isMyComment(isMyComment)
+                .canModify(isMyComment || isOwner)
                 .build();
     }
 
@@ -230,7 +260,7 @@ public class DiscussionService {
         boolean isAuthor = discussion.getAuthor().getId() == profile.getId();
         boolean isGroupOwner = group.getOwner().getId() == profile.getId();
         if (!isAuthor && !isGroupOwner) {
-            throw new IllegalStateException("토론 상태를 변경할 권한이 없습니다.");
+            throw new IllegalStateException("토론 수정/삭제/상태변경 권한이 없습니다.");
         }
     }
 

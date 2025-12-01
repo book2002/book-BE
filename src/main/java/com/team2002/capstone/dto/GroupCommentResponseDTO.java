@@ -14,4 +14,5 @@ public class GroupCommentResponseDTO {
     private String content;
     private LocalDateTime createdAt;
     private boolean isMyComment; // 내가 작성한 댓글인지 여부 (수정/삭제 버튼 활성화용)
+    private boolean canModify;
 }

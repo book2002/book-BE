@@ -14,4 +14,6 @@ public class GroupPostResponseDTO {
     private String content;
     private LocalDateTime createdAt;
     private long commentCount;
+    private boolean isMyPost;
+    private boolean canModify;
 }

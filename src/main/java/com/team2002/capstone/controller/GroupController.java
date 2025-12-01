@@ -65,4 +65,11 @@ public class GroupController {
         groupService.leaveGroup(groupId);
         return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "독서 모임 삭제")
+    @DeleteMapping("/{groupId}/delete")
+    public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId) {
+        groupService.deleteGroup(groupId);
+        return ResponseEntity.ok().build();
+    }
 }

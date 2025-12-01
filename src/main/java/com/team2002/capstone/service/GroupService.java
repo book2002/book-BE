@@ -67,6 +67,7 @@ public class GroupService {
                 .currentMembers(1)
                 .groupImageUrl(imageUrl)
                 .isJoined(true) // 모임 생성자 = 모임 구성원
+                .isOwner(true) // 모임 생성자 = 모임장
                 .build();
     }
 
@@ -122,6 +123,24 @@ public class GroupService {
     }
 
     @Transactional
+    public void deleteGroup(Long groupId){
+        Profile profile = getCurrentProfile();
+        ReadingGroup readingGroup = readingGroupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
+
+        if (readingGroup.getOwner().getId() != profile.getId()) {
+            throw new IllegalStateException("모임 삭제는 모임장만 가능합니다.");
+        }
+
+        int currentMembersCount = groupMemberRepository.countByGroup(readingGroup);
+        if (currentMembersCount > 1) {
+            throw new IllegalStateException("모임에 구성원이 남아있어 삭제할 수 없습니다.");
+        }
+
+        readingGroupRepository.delete(readingGroup);
+    }
+
+    @Transactional
     public List<GroupResponseDTO> getMyGroups() {
         Profile profile = getCurrentProfile();
         List<GroupMember> groups = groupMemberRepository.findAllByProfile(profile);
@@ -130,15 +149,17 @@ public class GroupService {
                 .map(GroupMember::getGroup)
                 .map(group -> {
                     int currentCount = groupMemberRepository.countByGroup(group);
+                    boolean isOwner = group.getOwner().getId() == profile.getId();
                     return GroupResponseDTO.builder()
                             .groupId(group.getId())
                             .name(group.getName())
                             .description(group.getDescription())
                             .goal(group.getGoal())
                             .ownerName(group.getOwner().getNickname())
-                            .maxMembers(currentCount)
+                            .maxMembers(group.getMaxMembers())
                             .currentMembers(currentCount)
                             .isJoined(true)
+                            .isOwner(isOwner)
                             .groupImageUrl(group.getGroupImageUrl())
                             .build();
                 })
@@ -154,6 +175,7 @@ public class GroupService {
                 .map(group -> {
                     int currentCount = groupMemberRepository.countByGroup(group);
                     boolean isJoined = groupMemberRepository.findByProfileAndGroup(profile, group).isPresent();
+                    boolean isOwner = group.getOwner().getId() == profile.getId();
                     return GroupResponseDTO.builder()
                             .groupId(group.getId())
                             .name(group.getName())
@@ -163,6 +185,7 @@ public class GroupService {
                             .maxMembers(group.getMaxMembers())
                             .currentMembers(currentCount)
                             .isJoined(isJoined)
+                            .isOwner(isOwner)
                             .groupImageUrl(group.getGroupImageUrl())
                             .build();
                 })
@@ -178,6 +201,7 @@ public class GroupService {
                 .map(group -> {
                     int currentCount = groupMemberRepository.countByGroup(group);
                     boolean isJoined = groupMemberRepository.findByProfileAndGroup(profile, group).isPresent();
+                    boolean isOwner = group.getOwner().getId() == profile.getId();
                     return GroupResponseDTO.builder()
                             .groupId(group.getId())
                             .name(group.getName())
@@ -187,6 +211,7 @@ public class GroupService {
                             .maxMembers(group.getMaxMembers())
                             .currentMembers(currentCount)
                             .isJoined(isJoined)
+                            .isOwner(isOwner)
                             .groupImageUrl(group.getGroupImageUrl())
                             .build();
                 })
