@@ -51,6 +51,8 @@ public class GroupPostService {
                 .content(requestDTO.getContent())
                 .createdAt(post.getCreatedAt())
                 .commentCount(0)
+                .isMyPost(true)
+                .canModify(true)
                 .build();
     }
 
@@ -64,6 +66,8 @@ public class GroupPostService {
 
         return posts.map(post -> {
             long commentCount = groupCommentRepository.countByPost(post);
+            boolean isMyPost = post.getAuthor().getId() == profile.getId();
+            boolean isOwner = post.getGroup().getOwner().getId() == profile.getId();
             return GroupPostResponseDTO.builder()
                     .postId(post.getId())
                     .groupId(group.getId())
@@ -72,16 +76,21 @@ public class GroupPostService {
                     .content(post.getContent())
                     .createdAt(post.getCreatedAt())
                     .commentCount(commentCount)
+                    .isMyPost(isMyPost)
+                    .canModify(isMyPost || isOwner)
                     .build();
         });
     }
 
     public GroupPostResponseDTO getPostDetail(Long postId) {
+        Profile profile = getCurrentProfile();
         GroupPost post = groupPostRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
         validatePostMembership(post, getCurrentProfile());
 
         long commentCount = groupCommentRepository.countByPost(post);
+        boolean isMyPost = post.getAuthor().getId() == profile.getId();
+        boolean isOwner = post.getGroup().getOwner().getId() == profile.getId();
 
         return GroupPostResponseDTO.builder()
                 .postId(post.getId())
@@ -91,6 +100,8 @@ public class GroupPostService {
                 .content(post.getContent())
                 .createdAt(post.getCreatedAt())
                 .commentCount(commentCount)
+                .isMyPost(isMyPost)
+                .canModify(isMyPost || isOwner)
                 .build();
     }
 
@@ -105,6 +116,8 @@ public class GroupPostService {
         post.setContent(requestDTO.getContent());
 
         long commentCount = groupCommentRepository.countByPost(post);
+        boolean isMyPost = post.getAuthor().getId() == author.getId();
+        boolean isOwner = post.getGroup().getOwner().getId() == author.getId();
         return GroupPostResponseDTO.builder()
                 .postId(post.getId())
                 .groupId(post.getGroup().getId())
@@ -113,6 +126,8 @@ public class GroupPostService {
                 .content(post.getContent())
                 .createdAt(post.getCreatedAt())
                 .commentCount(commentCount)
+                .isMyPost(isMyPost)
+                .canModify(isMyPost || isOwner)
                 .build();
     }
 
@@ -147,6 +162,7 @@ public class GroupPostService {
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .isMyComment(true)
+                .canModify(true)
                 .build();
     }
 
@@ -158,15 +174,19 @@ public class GroupPostService {
 
         List<GroupComment> comments = groupCommentRepository.findAllByPostOrderByCreatedAtDesc(post);
         return comments.stream()
-                .map(comment -> GroupCommentResponseDTO.builder()
-                        .commentId(comment.getId())
-                        .postId(postId)
-                        .authorNickname(comment.getAuthor().getNickname())
-                        .content(comment.getContent())
-                        .createdAt(comment.getCreatedAt())
-                        // 현재 프로필 ID와 댓글 작성자 ID가 같으면 true
-                        .isMyComment(comment.getAuthor().getId() == profile.getId())
-                        .build())
+                .map(comment -> {
+                    boolean isMyComment = comment.getAuthor().getId() == profile.getId();
+                    boolean isOwner = comment.getPost().getGroup().getOwner().getId() == profile.getId();
+                    return GroupCommentResponseDTO.builder()
+                            .commentId(comment.getId())
+                            .postId(postId)
+                            .authorNickname(comment.getAuthor().getNickname())
+                            .content(comment.getContent())
+                            .createdAt(comment.getCreatedAt())
+                            .isMyComment(isMyComment)
+                            .canModify(isMyComment || isOwner)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -179,13 +199,17 @@ public class GroupPostService {
 
         comment.setContent(requestDTO.getContent());
         groupCommentRepository.save(comment);
+
+        boolean isMyComment = comment.getAuthor().getId() == author.getId();
+        boolean isOwner = comment.getPost().getGroup().getOwner().getId() == author.getId();
         return GroupCommentResponseDTO.builder()
                 .commentId(comment.getId())
                 .postId(comment.getPost().getId())
                 .authorNickname(comment.getAuthor().getNickname())
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
-                .isMyComment(true)
+                .isMyComment(isMyComment)
+                .canModify(isMyComment || isOwner)
                 .build();
     }
 

@@ -16,4 +16,6 @@ public class DiscussionResponseDTO {
     private boolean isClosed;
     private LocalDateTime createdAt;
     private long commentCount;
+    private boolean isMyDiscussion;
+    private boolean canModify;
 }
