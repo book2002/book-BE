@@ -4,6 +4,8 @@ import com.team2002.capstone.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Set;
+
 @Entity
 @Getter
 @Setter
@@ -26,6 +28,9 @@ public class Discussion extends BaseEntity {
 
     @Column(columnDefinition = "boolean default false")
     private boolean isClosed;
+
+    @OneToMany(mappedBy = "discussion", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<DiscussionComment> comments;
 
     public Discussion() {
     }
